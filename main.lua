@@ -1,5 +1,6 @@
-local STI = require("sti")
+local STI = require("libraries/sti")
 require("player")
+anim8 = require("libraries/anim8")
 
 function love.load()
     Map = STI("map/map.lua", {"box2d"})

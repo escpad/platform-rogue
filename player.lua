@@ -1,20 +1,28 @@
 Player = {}
-
+anim8 = require("libraries/anim8")
 function Player:load()
     self.x = 100    
     self.y = 100
-    self.width = 58 
-    self.height = 78
+    self.width = 36
+    self.height = 36
     self.xVel = 0
     self.yVel = 0
     self.maxSpeed = 200
     self.acceleration = 4000
-    self.friction = 1000
+    self.friction = 1000 
     self.gravity = 2000
     self.grounded = false
     self.jumpAmount = -500
     self.canDoubleJump = false
 
+    self.spriteSheet = love.graphics.newImage("sprites/King/idle_right.png")
+    self.grid = anim8.newGrid(78,58,self.spriteSheet:getWidth(),self.spriteSheet:getHeight())
+
+    self.animations = {}
+    self.animations.idle = anim8.newAnimation(self.grid('1-10',1),0.1)
+
+    self.graceTime = 0
+    self.graceDuration = 0.8
     self.physics = {}
     self.physics.body = love.physics.newBody(World,self.x,self.y,"dynamic")
     self.physics.body:setFixedRotation(true)
@@ -22,10 +30,21 @@ function Player:load()
     self.physics.fixture = love.physics.newFixture(self.physics.body,self.physics.shape)
 end
 
+
+
 function Player:update(dt)
+    self:decreaseGraceTime(dt)
     self:syncPhysics()
     self:move(dt)
     self:applyGravity(dt)
+    self.animations.idle:update(dt)
+end
+
+function Player:decreaseGraceTime(dt)
+    if not self.grounded then
+        self.graceTime = self.graceTime - dt
+
+    end
 end
 
 function Player:applyGravity(dt)
@@ -93,22 +112,23 @@ end
 
 function Player:land(collision)
     self.currentGroundCollision = collision
-    self.canDoubleJump = true
     self.yVel = 0
+    self.canDoubleJump = true
     self.grounded = true
+    self.graceTime = self.graceDuration
 end
 
 function Player:jump(key)
     
-    if key == "space" and self.grounded then
-        self.yVel = self.jumpAmount
-        
-        if key == "space" and self.canDoubleJump then
+    if key == "space" then
+        if self.grounded or self.graceTime > 0 then
             self.yVel = self.jumpAmount
             self.grounded = false
+            self.graceTime = 0
+        elseif self.canDoubleJump then
             self.canDoubleJump = false
+            self.yVel = self.jumpAmount 
         end
-        self.grounded = false
     end
 end
 
@@ -121,5 +141,6 @@ function Player:endContact(a,b,collision)
 end
 
 function Player:draw()
-    love.graphics.rectangle("fill",self.x - self.width / 2,self.y - self.height / 2,self.width,self.height)
+    -- love.graphics.rectangle("fill", self.x - self.width / 2, self.y - self.height / 2,self.width,self.height)
+    self.animations.idle:draw(self.spriteSheet, self.x - 28 ,  self.y - 26)
 end
